@@ -6,18 +6,18 @@
 #define STORAGE_LEVELDB_INCLUDE_TABLE_H_
 
 #include <stdint.h>
-#include "leveldb/export.h"
 #include "leveldb/iterator.h"
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class Block;
-class BlockHandle;
-class Footer;
-struct Options;
-class RandomAccessFile;
-struct ReadOptions;
-class TableCache;
+class LEVELDB_EXPORT Block;
+class LEVELDB_EXPORT BlockHandle;
+class LEVELDB_EXPORT Footer;
+struct LEVELDB_EXPORT Options;
+class LEVELDB_EXPORT RandomAccessFile;
+struct LEVELDB_EXPORT ReadOptions;
+class LEVELDB_EXPORT TableCache;
 
 // A Table is a sorted map from strings to strings.  Tables are
 // immutable and persistent.  A Table may be safely accessed from
@@ -31,7 +31,7 @@ class LEVELDB_EXPORT Table {
   // If successful, returns ok and sets "*table" to the newly opened
   // table.  The client should delete "*table" when no longer needed.
   // If there was an error while initializing the table, sets "*table"
-  // to nullptr and returns a non-ok status.  Does not take ownership of
+  // to NULL and returns a non-ok status.  Does not take ownership of
   // "*source", but the client must ensure that "source" remains live
   // for the duration of the returned table's lifetime.
   //
@@ -40,9 +40,6 @@ class LEVELDB_EXPORT Table {
                      RandomAccessFile* file,
                      uint64_t file_size,
                      Table** table);
-
-  Table(const Table&) = delete;
-  void operator=(const Table&) = delete;
 
   ~Table();
 
@@ -60,7 +57,7 @@ class LEVELDB_EXPORT Table {
   uint64_t ApproximateOffsetOf(const Slice& key) const;
 
  private:
-  struct Rep;
+  struct LEVELDB_EXPORT Rep;
   Rep* rep_;
 
   explicit Table(Rep* rep) { rep_ = rep; }
@@ -69,7 +66,7 @@ class LEVELDB_EXPORT Table {
   // Calls (*handle_result)(arg, ...) with the entry found after a call
   // to Seek(key).  May not make such a call if filter policy says
   // that key is not present.
-  friend class TableCache;
+  friend class LEVELDB_EXPORT TableCache;
   Status InternalGet(
       const ReadOptions&, const Slice& key,
       void* arg,
@@ -78,6 +75,10 @@ class LEVELDB_EXPORT Table {
 
   void ReadMeta(const Footer& footer);
   void ReadFilter(const Slice& filter_handle_value);
+
+  // No copying allowed
+  Table(const Table&);
+  void operator=(const Table&);
 };
 
 }  // namespace leveldb

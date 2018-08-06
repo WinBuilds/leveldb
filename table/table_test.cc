@@ -13,12 +13,17 @@
 #include "leveldb/env.h"
 #include "leveldb/iterator.h"
 #include "leveldb/table_builder.h"
+
 #include "table/block.h"
 #include "table/block_builder.h"
 #include "table/format.h"
 #include "util/random.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+
+#ifdef HAVE_SNAPPY
+#include "leveldb/snappy_compressor.h"
+#endif
 
 namespace leveldb {
 
@@ -172,7 +177,7 @@ class Constructor {
 
   virtual const KVMap& data() { return data_; }
 
-  virtual DB* db() const { return nullptr; }  // Overridden in DBConstructor
+  virtual DB* db() const { return NULL; }  // Overridden in DBConstructor
 
  private:
   KVMap data_;
@@ -183,13 +188,13 @@ class BlockConstructor: public Constructor {
   explicit BlockConstructor(const Comparator* cmp)
       : Constructor(cmp),
         comparator_(cmp),
-        block_(nullptr) { }
+        block_(NULL) { }
   ~BlockConstructor() {
     delete block_;
   }
   virtual Status FinishImpl(const Options& options, const KVMap& data) {
     delete block_;
-    block_ = nullptr;
+    block_ = NULL;
     BlockBuilder builder(&options);
 
     for (KVMap::const_iterator it = data.begin();
@@ -222,7 +227,7 @@ class TableConstructor: public Constructor {
  public:
   TableConstructor(const Comparator* cmp)
       : Constructor(cmp),
-        source_(nullptr), table_(nullptr) {
+        source_(NULL), table_(NULL) {
   }
   ~TableConstructor() {
     Reset();
@@ -262,8 +267,8 @@ class TableConstructor: public Constructor {
   void Reset() {
     delete table_;
     delete source_;
-    table_ = nullptr;
-    source_ = nullptr;
+    table_ = NULL;
+    source_ = NULL;
   }
 
   StringSource* source_;
@@ -351,7 +356,7 @@ class DBConstructor: public Constructor {
   explicit DBConstructor(const Comparator* cmp)
       : Constructor(cmp),
         comparator_(cmp) {
-    db_ = nullptr;
+    db_ = NULL;
     NewDB();
   }
   ~DBConstructor() {
@@ -359,7 +364,7 @@ class DBConstructor: public Constructor {
   }
   virtual Status FinishImpl(const Options& options, const KVMap& data) {
     delete db_;
-    db_ = nullptr;
+    db_ = NULL;
     NewDB();
     for (KVMap::const_iterator it = data.begin();
          it != data.end();
@@ -436,11 +441,11 @@ static const int kNumTestArgs = sizeof(kTestArgList) / sizeof(kTestArgList[0]);
 
 class Harness {
  public:
-  Harness() : constructor_(nullptr) { }
+  Harness() : constructor_(NULL) { }
 
   void Init(const TestArgs& args) {
     delete constructor_;
-    constructor_ = nullptr;
+    constructor_ = NULL;
     options_ = Options();
 
     options_.block_restart_interval = args.restart_interval;
@@ -636,7 +641,7 @@ class Harness {
     }
   }
 
-  // Returns nullptr if not running against a DB
+  // Returns NULL if not running against a DB
   DB* db() const { return constructor_->db(); }
 
  private:
@@ -810,7 +815,6 @@ TEST(TableTest, ApproximateOffsetOfPlain) {
   KVMap kvmap;
   Options options;
   options.block_size = 1024;
-  options.compression = kNoCompression;
   c.Finish(options, &keys, &kvmap);
 
   ASSERT_TRUE(Between(c.ApproximateOffsetOf("abc"),       0,      0));
@@ -827,10 +831,19 @@ TEST(TableTest, ApproximateOffsetOfPlain) {
 
 }
 
+
 static bool SnappyCompressionSupported() {
-  std::string out;
-  Slice in = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-  return port::Snappy_Compress(in.data(), in.size(), &out);
+#if HAVE_SNAPPY
+   std::string compressed;
+   leveldb::SnappyCompressor compressor;
+
+   Slice in = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+   compressor.compress(in.data(), in.size(), compressed);
+ 
+   return compressed.size() > 0;
+#else
+  return false;
+#endif
 }
 
 TEST(TableTest, ApproximateOffsetOfCompressed) {
@@ -850,7 +863,7 @@ TEST(TableTest, ApproximateOffsetOfCompressed) {
   KVMap kvmap;
   Options options;
   options.block_size = 1024;
-  options.compression = kSnappyCompression;
+  options.compressors[0] = new leveldb::SnappyCompressor();
   c.Finish(options, &keys, &kvmap);
 
   // Expected upper and lower bounds of space used by compressible strings.

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\util\status_test.cc" />
+    <ClCompile Include="..\..\util\testharness.cc" />
+    <ClCompile Include="..\..\util\testutil.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\util\testharness.h" />
+    <ClInclude Include="..\..\util\testutil.h" />
+  </ItemGroup>
+</Project>

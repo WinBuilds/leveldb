@@ -10,7 +10,7 @@
 
 namespace leveldb {
 
-class Slice;
+class LEVELDB_EXPORT Slice;
 
 // A Comparator object provides a total order across slices that are
 // used as keys in an sstable or a database.  A Comparator implementation
@@ -57,7 +57,7 @@ class LEVELDB_EXPORT Comparator {
 // Return a builtin comparator that uses lexicographic byte-wise
 // ordering.  The result remains the property of this module and
 // must not be deleted.
-LEVELDB_EXPORT const Comparator* BytewiseComparator();
+extern const Comparator* BytewiseComparator();
 
 }  // namespace leveldb
 

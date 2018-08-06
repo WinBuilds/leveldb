@@ -4,18 +4,14 @@
 
 #include "helpers/memenv/memenv.h"
 
-#include <string.h>
-
-#include <limits>
-#include <map>
-#include <string>
-#include <vector>
-
 #include "leveldb/env.h"
 #include "leveldb/status.h"
 #include "port/port.h"
-#include "port/thread_annotations.h"
 #include "util/mutexlock.h"
+#include <map>
+#include <string.h>
+#include <string>
+#include <vector>
 
 namespace leveldb {
 
@@ -66,9 +62,10 @@ class FileState {
       return Status::OK();
     }
 
-    assert(offset / kBlockSize <= std::numeric_limits<size_t>::max());
+    assert(offset / kBlockSize <= SIZE_MAX);
     size_t block = static_cast<size_t>(offset / kBlockSize);
-    size_t block_offset = offset % kBlockSize;
+
+	size_t block_offset = offset % kBlockSize;
 
     if (n <= kBlockSize - block_offset) {
       // The requested bytes are all in the first block.
@@ -139,7 +136,7 @@ class FileState {
   void operator=(const FileState&);
 
   port::Mutex refs_mutex_;
-  int refs_ GUARDED_BY(refs_mutex_);
+  int refs_;  // Protected by refs_mutex_;
 
   // The following fields are not protected by any mutex. They are only mutable
   // while the file is being written, and concurrent access is not allowed
@@ -172,8 +169,9 @@ class SequentialFileImpl : public SequentialFile {
     if (pos_ > file_->Size()) {
       return Status::IOError("pos_ > file_->Size()");
     }
-    const uint64_t available = file_->Size() - pos_;
-    if (n > available) {
+	const uint64_t available = file_->Size() - pos_;
+
+	if (n > available) {
       n = available;
     }
     pos_ += n;
@@ -246,7 +244,7 @@ class InMemoryEnv : public EnvWrapper {
                                    SequentialFile** result) {
     MutexLock lock(&mutex_);
     if (file_map_.find(fname) == file_map_.end()) {
-      *result = nullptr;
+      *result = NULL;
       return Status::IOError(fname, "File not found");
     }
 
@@ -258,7 +256,7 @@ class InMemoryEnv : public EnvWrapper {
                                      RandomAccessFile** result) {
     MutexLock lock(&mutex_);
     if (file_map_.find(fname) == file_map_.end()) {
-      *result = nullptr;
+      *result = NULL;
       return Status::IOError(fname, "File not found");
     }
 
@@ -286,7 +284,7 @@ class InMemoryEnv : public EnvWrapper {
     MutexLock lock(&mutex_);
     FileState** sptr = &file_map_[fname];
     FileState* file = *sptr;
-    if (file == nullptr) {
+    if (file == NULL) {
       file = new FileState();
       file->Ref();
     }
@@ -316,8 +314,7 @@ class InMemoryEnv : public EnvWrapper {
     return Status::OK();
   }
 
-  void DeleteFileInternal(const std::string& fname)
-      EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
+  void DeleteFileInternal(const std::string& fname) {
     if (file_map_.find(fname) == file_map_.end()) {
       return;
     }
@@ -391,7 +388,7 @@ class InMemoryEnv : public EnvWrapper {
   // Map from filenames to FileState objects, representing a simple file system.
   typedef std::map<std::string, FileState*> FileSystem;
   port::Mutex mutex_;
-  FileSystem file_map_ GUARDED_BY(mutex_);
+  FileSystem file_map_;  // Protected by mutex_.
 };
 
 }  // namespace

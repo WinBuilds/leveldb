@@ -88,7 +88,7 @@ class BloomFilterPolicy : public FilterPolicy {
 };
 }
 
-const FilterPolicy* NewBloomFilterPolicy(int bits_per_key) {
+LEVELDB_EXPORT const FilterPolicy* NewBloomFilterPolicy(int bits_per_key) {
   return new BloomFilterPolicy(bits_per_key);
 }
 
