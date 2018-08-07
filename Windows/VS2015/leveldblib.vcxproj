@@ -206,6 +206,13 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>mkdir "$(SolutionDir)..\..\..\..\build_msvc14_$(Platform)\$(Configuration)\include\leveldb"
+xcopy "$(SolutionDir)..\..\include\leveldb" "$(SolutionDir)..\..\..\..\build_msvc14_$(Platform)\$(Configuration)\include\leveldb\" /E /I /R /Y /D</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>copying include header files..</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -222,6 +229,13 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>mkdir "$(SolutionDir)..\..\..\..\build_msvc14_$(Platform)\$(Configuration)\include\leveldb"
+xcopy "$(SolutionDir)..\..\include\leveldb" "$(SolutionDir)..\..\..\..\build_msvc14_$(Platform)\$(Configuration)\include\leveldb\" /E /I /R /Y /D</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>copying include header files..</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -242,6 +256,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent>
+      <Command>mkdir "$(SolutionDir)..\..\..\..\build_msvc14_$(Platform)\$(Configuration)\include\leveldb"
+xcopy "$(SolutionDir)..\..\include\leveldb" "$(SolutionDir)..\..\..\..\build_msvc14_$(Platform)\$(Configuration)\include\leveldb\" /E /I /R /Y /D</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>copying include header files..</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -262,6 +283,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent>
+      <Command>mkdir "$(SolutionDir)..\..\..\..\build_msvc14_$(Platform)\$(Configuration)\include\leveldb"
+xcopy "$(SolutionDir)..\..\include\leveldb" "$(SolutionDir)..\..\..\..\build_msvc14_$(Platform)\$(Configuration)\include\leveldb\" /E /I /R /Y /D</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>copying include header files..</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

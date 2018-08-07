@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "leveldblib", "leveldblib.vcxproj", "{D2F89B7C-6FF4-463E-B1D4-9B1DA5110DF6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "leveldbdll", "leveldbdll.vcxproj", "{F084B168-FA5C-4AE6-AF8F-90AF78CB980A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D2F89B7C-6FF4-463E-B1D4-9B1DA5110DF6} = {D2F89B7C-6FF4-463E-B1D4-9B1DA5110DF6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "leveldbutil", "leveldbutil.vcxproj", "{D668474F-7659-440C-8367-9B9A78E39B8A}"
 EndProject
