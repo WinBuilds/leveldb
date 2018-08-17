@@ -32,6 +32,10 @@
 #include <condition_variable>
 #include <thread>
 
+#ifdef _WIN32
+#define fseek _fseeki64
+#endif
+
 namespace leveldb {
 	namespace {
 
