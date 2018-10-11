@@ -18,17 +18,18 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include "leveldb/status.h"
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class FileLock;
-class Logger;
-class RandomAccessFile;
-class SequentialFile;
-class Slice;
-class WritableFile;
+class LEVELDB_EXPORT FileLock;
+class LEVELDB_EXPORT Logger;
+class LEVELDB_EXPORT RandomAccessFile;
+class LEVELDB_EXPORT SequentialFile;
+class LEVELDB_EXPORT Slice;
+class LEVELDB_EXPORT WritableFile;
 
-class Env {
+class LEVELDB_EXPORT Env {
  public:
   Env() { }
   virtual ~Env();
@@ -43,7 +44,8 @@ class Env {
   // Create a brand new sequentially-readable file with the specified name.
   // On success, stores a pointer to the new file in *result and returns OK.
   // On failure stores NULL in *result and returns non-OK.  If the file does
-  // not exist, returns a non-OK status.
+  // not exist, returns a non-OK status.  Implementations should return a
+  // NotFound status when the file does not exist.
   //
   // The returned file will only be accessed by one thread at a time.
   virtual Status NewSequentialFile(const std::string& fname,
@@ -53,7 +55,8 @@ class Env {
   // specified name.  On success, stores a pointer to the new file in
   // *result and returns OK.  On failure stores NULL in *result and
   // returns non-OK.  If the file does not exist, returns a non-OK
-  // status.
+  // status.  Implementations should return a NotFound status when the file does
+  // not exist.
   //
   // The returned file may be concurrently accessed by multiple threads.
   virtual Status NewRandomAccessFile(const std::string& fname,
@@ -167,7 +170,7 @@ class Env {
 };
 
 // A file abstraction for reading sequentially through a file
-class SequentialFile {
+class LEVELDB_EXPORT SequentialFile {
  public:
   SequentialFile() { }
   virtual ~SequentialFile();
@@ -198,7 +201,7 @@ class SequentialFile {
 };
 
 // A file abstraction for randomly reading the contents of a file.
-class RandomAccessFile {
+class LEVELDB_EXPORT RandomAccessFile {
  public:
   RandomAccessFile() { }
   virtual ~RandomAccessFile();
@@ -224,7 +227,7 @@ class RandomAccessFile {
 // A file abstraction for sequential writing.  The implementation
 // must provide buffering since callers may append small fragments
 // at a time to the file.
-class WritableFile {
+class LEVELDB_EXPORT WritableFile {
  public:
   WritableFile() { }
   virtual ~WritableFile();
@@ -241,7 +244,7 @@ class WritableFile {
 };
 
 // An interface for writing log messages.
-class Logger {
+class LEVELDB_EXPORT Logger {
  public:
   Logger() { }
   virtual ~Logger();
@@ -257,7 +260,7 @@ class Logger {
 
 
 // Identifies a locked file.
-class FileLock {
+class LEVELDB_EXPORT FileLock {
  public:
   FileLock() { }
   virtual ~FileLock();
@@ -285,7 +288,7 @@ extern Status ReadFileToString(Env* env, const std::string& fname,
 // An implementation of Env that forwards all calls to another Env.
 // May be useful to clients who wish to override just part of the
 // functionality of another Env.
-class EnvWrapper : public Env {
+class LEVELDB_EXPORT EnvWrapper : public Env {
  public:
   // Initialize an EnvWrapper that delegates all calls to *t
   explicit EnvWrapper(Env* t) : target_(t) { }

@@ -398,7 +398,7 @@ class ShardedLRUCache : public Cache {
 
 }  // end anonymous namespace
 
-Cache* NewLRUCache(size_t capacity) {
+LEVELDB_EXPORT Cache* NewLRUCache(size_t capacity) {
   return new ShardedLRUCache(capacity);
 }
 

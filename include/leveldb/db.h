@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "leveldb/export.h"
 #include "leveldb/iterator.h"
 #include "leveldb/options.h"
 
@@ -16,21 +17,21 @@ namespace leveldb {
 static const int kMajorVersion = 1;
 static const int kMinorVersion = 20;
 
-struct Options;
-struct ReadOptions;
-struct WriteOptions;
-class WriteBatch;
+struct LEVELDB_EXPORT Options;
+struct LEVELDB_EXPORT ReadOptions;
+struct LEVELDB_EXPORT WriteOptions;
+class LEVELDB_EXPORT WriteBatch;
 
 // Abstract handle to particular state of a DB.
 // A Snapshot is an immutable object and can therefore be safely
 // accessed from multiple threads without any external synchronization.
-class Snapshot {
+class LEVELDB_EXPORT Snapshot {
  protected:
   virtual ~Snapshot();
 };
 
 // A range of keys
-struct Range {
+struct LEVELDB_EXPORT Range {
   Slice start;          // Included in the range
   Slice limit;          // Not included in the range
 
@@ -41,7 +42,7 @@ struct Range {
 // A DB is a persistent ordered map from keys to values.
 // A DB is safe for concurrent access from multiple threads without
 // any external synchronization.
-class DB {
+class LEVELDB_EXPORT DB {
  public:
   // Open the database with the specified "name".
   // Stores a pointer to a heap-allocated database in *dbptr and returns
@@ -142,6 +143,12 @@ class DB {
   //    db->CompactRange(NULL, NULL);
   virtual void CompactRange(const Slice* begin, const Slice* end) = 0;
 
+  // Allows the underlying storage to prepare for an application suspend event
+  virtual void SuspendCompaction() = 0;
+
+  // Allow the underlying storage to react to an application resume event
+  virtual void ResumeCompaction() = 0;
+
  private:
   // No copying allowed
   DB(const DB&);
@@ -150,13 +157,13 @@ class DB {
 
 // Destroy the contents of the specified database.
 // Be very careful using this method.
-Status DestroyDB(const std::string& name, const Options& options);
+extern LEVELDB_EXPORT Status DestroyDB(const std::string& name, const Options& options);
 
 // If a DB cannot be opened, you may attempt to call this method to
 // resurrect as much of the contents of the database as possible.
 // Some data may be lost, so be careful when calling this function
 // on a database that contains important information.
-Status RepairDB(const std::string& dbname, const Options& options);
+extern LEVELDB_EXPORT Status RepairDB(const std::string& dbname, const Options& options);
 
 }  // namespace leveldb
 

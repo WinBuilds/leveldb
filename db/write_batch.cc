@@ -30,13 +30,20 @@ WriteBatch::WriteBatch() {
   Clear();
 }
 
-WriteBatch::~WriteBatch() { }
+WriteBatch::~WriteBatch() 
+{
+
+}
 
 WriteBatch::Handler::~Handler() { }
 
 void WriteBatch::Clear() {
   rep_.clear();
   rep_.resize(kHeader);
+}
+
+size_t WriteBatch::ApproximateSize() {
+  return rep_.size();
 }
 
 Status WriteBatch::Iterate(Handler* handler) const {
@@ -84,7 +91,7 @@ int WriteBatchInternal::Count(const WriteBatch* b) {
 }
 
 void WriteBatchInternal::SetCount(WriteBatch* b, int n) {
-  EncodeFixed32(&b->rep_[8], n);
+  EncodeFixed32(&(b->rep_)[8], n);
 }
 
 SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
@@ -92,7 +99,7 @@ SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
 }
 
 void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
-  EncodeFixed64(&b->rep_[0], seq);
+	EncodeFixed64(&b->rep_[0], seq);
 }
 
 void WriteBatch::Put(const Slice& key, const Slice& value) {

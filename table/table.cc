@@ -62,7 +62,8 @@ Status Table::Open(const Options& options,
     if (options.paranoid_checks) {
       opt.verify_checksums = true;
     }
-    s = ReadBlock(file, opt, footer.index_handle(), &contents);
+    s = ReadBlock(file, options, opt, footer.index_handle(), &contents);
+
     if (s.ok()) {
       index_block = new Block(contents);
     }
@@ -100,7 +101,7 @@ void Table::ReadMeta(const Footer& footer) {
     opt.verify_checksums = true;
   }
   BlockContents contents;
-  if (!ReadBlock(rep_->file, opt, footer.metaindex_handle(), &contents).ok()) {
+  if (!ReadBlock(rep_->file, rep_->options, opt, footer.metaindex_handle(), &contents).ok()) {
     // Do not propagate errors since meta info is not needed for operation
     return;
   }
@@ -131,7 +132,7 @@ void Table::ReadFilter(const Slice& filter_handle_value) {
     opt.verify_checksums = true;
   }
   BlockContents block;
-  if (!ReadBlock(rep_->file, opt, filter_handle, &block).ok()) {
+  if (!ReadBlock(rep_->file, rep_->options, opt, filter_handle, &block).ok()) {
     return;
   }
   if (block.heap_allocated) {
@@ -186,7 +187,7 @@ Iterator* Table::BlockReader(void* arg,
       if (cache_handle != NULL) {
         block = reinterpret_cast<Block*>(block_cache->Value(cache_handle));
       } else {
-        s = ReadBlock(table->rep_->file, options, handle, &contents);
+		  s = ReadBlock(table->rep_->file, table->rep_->options, options, handle, &contents);
         if (s.ok()) {
           block = new Block(contents);
           if (contents.cachable && options.fill_cache) {
@@ -196,7 +197,7 @@ Iterator* Table::BlockReader(void* arg,
         }
       }
     } else {
-      s = ReadBlock(table->rep_->file, options, handle, &contents);
+		s = ReadBlock(table->rep_->file, table->rep_->options, options, handle, &contents);
       if (s.ok()) {
         block = new Block(contents);
       }

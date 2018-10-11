@@ -13,12 +13,17 @@
 #include "leveldb/env.h"
 #include "leveldb/iterator.h"
 #include "leveldb/table_builder.h"
+
 #include "table/block.h"
 #include "table/block_builder.h"
 #include "table/format.h"
 #include "util/random.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+
+#ifdef HAVE_SNAPPY
+#include "leveldb/snappy_compressor.h"
+#endif
 
 namespace leveldb {
 
@@ -810,7 +815,6 @@ TEST(TableTest, ApproximateOffsetOfPlain) {
   KVMap kvmap;
   Options options;
   options.block_size = 1024;
-  options.compression = kNoCompression;
   c.Finish(options, &keys, &kvmap);
 
   ASSERT_TRUE(Between(c.ApproximateOffsetOf("abc"),       0,      0));
@@ -827,10 +831,19 @@ TEST(TableTest, ApproximateOffsetOfPlain) {
 
 }
 
+
 static bool SnappyCompressionSupported() {
-  std::string out;
-  Slice in = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-  return port::Snappy_Compress(in.data(), in.size(), &out);
+#if HAVE_SNAPPY
+   std::string compressed;
+   leveldb::SnappyCompressor compressor;
+
+   Slice in = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+   compressor.compress(in.data(), in.size(), compressed);
+ 
+   return compressed.size() > 0;
+#else
+  return false;
+#endif
 }
 
 TEST(TableTest, ApproximateOffsetOfCompressed) {
@@ -850,7 +863,7 @@ TEST(TableTest, ApproximateOffsetOfCompressed) {
   KVMap kvmap;
   Options options;
   options.block_size = 1024;
-  options.compression = kSnappyCompression;
+  options.compressors[0] = new leveldb::SnappyCompressor();
   c.Finish(options, &keys, &kvmap);
 
   // Expected upper and lower bounds of space used by compressible strings.

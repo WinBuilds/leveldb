@@ -49,7 +49,7 @@ bool Reader::SkipToInitialBlock() {
   if (block_start_location > 0) {
     Status skip_status = file_->Skip(block_start_location);
     if (!skip_status.ok()) {
-      ReportDrop(block_start_location, skip_status);
+      ReportDrop((long)block_start_location, skip_status);
       return false;
     }
   }

@@ -134,6 +134,7 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
       seed_(0),
       tmp_batch_(new WriteBatch),
       bg_compaction_scheduled_(false),
+      suspending_compaction_(NULL),
       manual_compaction_(NULL) {
   has_imm_.Release_Store(NULL);
 
@@ -148,6 +149,7 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
 DBImpl::~DBImpl() {
   // Wait for background work to finish
   mutex_.Lock();
+  suspending_compaction_.Release_Store(nullptr); // make sure that the suspend flag is clear
   shutting_down_.Release_Store(this);  // Any non-NULL value is ok
   while (bg_compaction_scheduled_) {
     bg_cv_.Wait();
@@ -648,6 +650,8 @@ void DBImpl::MaybeScheduleCompaction() {
     // Already scheduled
   } else if (shutting_down_.Acquire_Load()) {
     // DB is being deleted; no more background compactions
+  } else if (imm_ == NULL && suspending_compaction_.Acquire_Load()) {
+	// DB is being suspended; no more background compactions
   } else if (!bg_error_.ok()) {
     // Already got an error; no more changes
   } else if (imm_ == NULL &&
@@ -658,6 +662,23 @@ void DBImpl::MaybeScheduleCompaction() {
     bg_compaction_scheduled_ = true;
     env_->Schedule(&DBImpl::BGWork, this);
   }
+}
+
+void DBImpl::SuspendCompaction() {
+	// set suspend flag and wait for any currently executing bg tasks to complete
+    Log(options_.info_log, "BG suspend compaction\n");
+	mutex_.Lock();
+	suspending_compaction_.Release_Store(this);  // Any non-NULL value is ok
+	mutex_.Unlock();
+	Log(options_.info_log, "BG suspended\n");
+}
+
+void DBImpl::ResumeCompaction() {
+    Log(options_.info_log, "BG resume compaction\n");
+    mutex_.Lock();
+	suspending_compaction_.Release_Store(nullptr);
+	mutex_.Unlock();
+	Log(options_.info_log, "db BG resumed\n");
 }
 
 void DBImpl::BGWork(void* db) {
@@ -679,7 +700,9 @@ void DBImpl::BackgroundCall() {
 
   // Previous compaction may have produced too many files in a level,
   // so reschedule another compaction if needed.
-  MaybeScheduleCompaction();
+  if(!suspending_compaction_.Acquire_Load()) {
+      MaybeScheduleCompaction();
+  }
   bg_cv_.SignalAll();
 }
 
@@ -748,6 +771,8 @@ void DBImpl::BackgroundCompaction() {
     // Done
   } else if (shutting_down_.Acquire_Load()) {
     // Ignore compaction errors found during shutting down
+  } else if (suspending_compaction_.Acquire_Load()) {
+    // Ignore compaction errors found during suspend
   } else {
     Log(options_.info_log,
         "Compaction error: %s", status.ToString().c_str());
@@ -1081,7 +1106,7 @@ Iterator* DBImpl::NewInternalIterator(const ReadOptions& options,
   }
   versions_->current()->AddIterators(options, &list);
   Iterator* internal_iter =
-      NewMergingIterator(&internal_comparator_, &list[0], list.size());
+      NewMergingIterator(&internal_comparator_, &list[0], (uint32_t)list.size());
   versions_->current()->Ref();
 
   cleanup->mu = &mutex_;
@@ -1342,6 +1367,9 @@ Status DBImpl::MakeRoomForWrite(bool force) {
                (mem_->ApproximateMemoryUsage() <= options_.write_buffer_size)) {
       // There is room in current memtable
       break;
+    } else if(suspending_compaction_.Acquire_Load()) {
+        // suspending, don't do this now
+        break;
     } else if (imm_ != NULL) {
       // We have filled up the current memtable, but the previous
       // one is still being compacted, so we wait.
@@ -1372,7 +1400,9 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       mem_ = new MemTable(internal_comparator_);
       mem_->Ref();
       force = false;   // Do not force another compaction if have room
-      MaybeScheduleCompaction();
+      if(!suspending_compaction_.Acquire_Load()) {
+         MaybeScheduleCompaction();
+      }
     }
   }
   return s;
@@ -1413,7 +1443,7 @@ bool DBImpl::GetProperty(const Slice& property, std::string* value) {
       if (stats_[level].micros > 0 || files > 0) {
         snprintf(
             buf, sizeof(buf),
-            "%3d %8d %8.0f %9.0f %8.0f %9.0f\n",
+            "%3d %8d %8.0f %9.2f %8.2f %9.2f\n",
             level,
             files,
             versions_->NumLevelBytes(level) / 1048576.0,
@@ -1424,6 +1454,52 @@ bool DBImpl::GetProperty(const Slice& property, std::string* value) {
       }
     }
     return true;
+	// BLOCK ADDED FOR MINECRAFT
+  } else if (in == "jsonstats") {
+	  char buf[200];
+	  value->append("{\n");
+	  value->append("\"levels\"");
+	  value->append(": [\n");
+	  bool first = true;
+	  for (int level = 0; level < config::kNumLevels; level++) {
+		  int files = versions_->NumLevelFiles(level);
+		  if (stats_[level].micros > 0 || files > 0) {
+
+			  // Nth items in array append ,\n to previous entry
+			  if (!first) {
+				  value->append(",\n");
+			  }
+			  value->append("{\n");
+
+			  value->append("\"level\"");
+			  snprintf(buf, sizeof(buf), ": %3d,\n", level);
+			  value->append(buf);
+
+			  value->append("\"files\"");
+			  snprintf(buf, sizeof(buf), ": %3d,\n", files);
+			  value->append(buf);
+
+			  snprintf(buf, sizeof(buf), "\"sizeMB\": %0.3f,\n", versions_->NumLevelBytes(level) / 1048576.0);
+			  value->append(buf);
+
+			  snprintf(buf, sizeof(buf), "\"tsec\": %0.3f,\n", stats_[level].micros / 1e6);
+			  value->append(buf);
+
+			  snprintf(buf, sizeof(buf), "\"readMB\": %0.3f,\n", stats_[level].bytes_read / 1048576.0);
+			  value->append(buf);
+
+			  snprintf(buf, sizeof(buf), "\"writeMB\": %0.3f\n", stats_[level].bytes_written / 1048576.0);
+			  value->append(buf);
+
+			  // append end }
+			  value->append("}");
+
+			  first = false;
+		  }
+	  }
+	  value->append("]\n");
+	  value->append("}");
+
   } else if (in == "sstables") {
     *value = versions_->current()->DebugString();
     return true;
@@ -1534,7 +1610,7 @@ Status DB::Open(const Options& options, const std::string& dbname,
 Snapshot::~Snapshot() {
 }
 
-Status DestroyDB(const std::string& dbname, const Options& options) {
+LEVELDB_EXPORT Status DestroyDB(const std::string& dbname, const Options& options) {
   Env* env = options.env;
   std::vector<std::string> filenames;
   // Ignore error in case directory does not exist

@@ -15,11 +15,22 @@
 
 #include <string>
 #include "leveldb/slice.h"
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class Status {
+class LEVELDB_EXPORT Status {
  public:
+	 
+  enum Code {
+	  kOk = 0,
+	  kNotFound = 1,
+	  kCorruption = 2,
+	  kNotSupported = 3,
+	  kInvalidArgument = 4,
+	  kIOError = 5
+  };
+
   // Create a success status.
   Status() : state_(NULL) { }
   ~Status() { delete[] state_; }
@@ -46,6 +57,10 @@ class Status {
   }
   static Status IOError(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kIOError, msg, msg2);
+  }
+
+  Code code() const {
+	  return (state_ == NULL) ? kOk : static_cast<Code>(state_[4]);
   }
 
   // Returns true iff the status indicates success.
@@ -77,19 +92,6 @@ class Status {
   //    state_[4]    == code
   //    state_[5..]  == message
   const char* state_;
-
-  enum Code {
-    kOk = 0,
-    kNotFound = 1,
-    kCorruption = 2,
-    kNotSupported = 3,
-    kInvalidArgument = 4,
-    kIOError = 5
-  };
-
-  Code code() const {
-    return (state_ == NULL) ? kOk : static_cast<Code>(state_[4]);
-  }
 
   Status(Code code, const Slice& msg, const Slice& msg2);
   static const char* CopyState(const char* s);

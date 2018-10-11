@@ -17,10 +17,11 @@
 
 #include "leveldb/slice.h"
 #include "leveldb/status.h"
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class Iterator {
+class LEVELDB_EXPORT Iterator {
  public:
   Iterator();
   virtual ~Iterator();
@@ -76,7 +77,7 @@ class Iterator {
   void RegisterCleanup(CleanupFunction function, void* arg1, void* arg2);
 
  private:
-  struct Cleanup {
+  struct LEVELDB_EXPORT Cleanup {
     CleanupFunction function;
     void* arg1;
     void* arg2;

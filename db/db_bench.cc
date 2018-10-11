@@ -18,6 +18,10 @@
 #include "util/random.h"
 #include "util/testutil.h"
 
+#ifdef HAVE_SNAPPY
+#include "leveldb/snappy_compressor.h"
+#endif
+
 // Comma-separated list of operations to run in the specified order
 //   Actual benchmarks:
 //      fillseq       -- write N values in sequential key order in async mode
@@ -56,8 +60,10 @@ static const char* FLAGS_benchmarks =
     "readreverse,"
     "fill100K,"
     "crc32c,"
+#ifdef HAVE_SNAPPY
     "snappycomp,"
     "snappyuncomp,"
+#endif
     "acquireload,"
     ;
 
@@ -355,14 +361,21 @@ class Benchmark {
             "WARNING: Assertions are enabled; benchmarks unnecessarily slow\n");
 #endif
 
-    // See if snappy is working by attempting to compress a compressible string
+#ifdef HAVE_SNAPPY
+    // See if snappy is working by attempting to compress a compressible string   
     const char text[] = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
     std::string compressed;
-    if (!port::Snappy_Compress(text, sizeof(text), &compressed)) {
-      fprintf(stdout, "WARNING: Snappy compression is not enabled\n");
+    leveldb::SnappyCompressor compressor;
+
+    compressor.compress(text, sizeof(text), compressed);
+    if (!compressed.size()) {
+      fprintf(stdout, "WARNING: Snappy compression is not working\n");
     } else if (compressed.size() >= sizeof(text)) {
       fprintf(stdout, "WARNING: Snappy compression is not effective\n");
     }
+#else
+    fprintf(stdout, "WARNING: Snappy compression is not enabled\n");
+#endif
   }
 
   void PrintEnvironment() {
@@ -512,10 +525,12 @@ class Benchmark {
         method = &Benchmark::Crc32c;
       } else if (name == Slice("acquireload")) {
         method = &Benchmark::AcquireLoad;
+#ifdef HAVE_SNAPPY
       } else if (name == Slice("snappycomp")) {
         method = &Benchmark::SnappyCompress;
       } else if (name == Slice("snappyuncomp")) {
         method = &Benchmark::SnappyUncompress;
+#endif
       } else if (name == Slice("heapprofile")) {
         HeapProfile();
       } else if (name == Slice("stats")) {
@@ -659,16 +674,23 @@ class Benchmark {
     if (ptr == NULL) exit(1); // Disable unused variable warning.
   }
 
-  void SnappyCompress(ThreadState* thread) {
+#ifdef HAVE_SNAPPY
+  void SnappyCompress(ThreadState* thread) {    
     RandomGenerator gen;
     Slice input = gen.Generate(Options().block_size);
     int64_t bytes = 0;
     int64_t produced = 0;
-    bool ok = true;
+    
+    SnappyCompressor compressor;
     std::string compressed;
+    size_t compressed_size = 0;
+    bool ok = true;
+
     while (ok && bytes < 1024 * 1048576) {  // Compress 1G
-      ok = port::Snappy_Compress(input.data(), input.size(), &compressed);
-      produced += compressed.size();
+      compressor.compress(input.data(), input.size(), compressed);
+      compressed_size = compressed.size();
+      ok = compressed_size > 0;
+      produced += compressed_size;
       bytes += input.size();
       thread->stats.FinishedSingleOp();
     }
@@ -687,17 +709,26 @@ class Benchmark {
   void SnappyUncompress(ThreadState* thread) {
     RandomGenerator gen;
     Slice input = gen.Generate(Options().block_size);
+
+    SnappyCompressor compressor;
     std::string compressed;
-    bool ok = port::Snappy_Compress(input.data(), input.size(), &compressed);
+    
+    compressor.compress(input.data(), input.size(), compressed);
+    size_t compressed_size = compressed.size();
+    bool ok = compressed_size > 0;
+
     int64_t bytes = 0;
-    char* uncompressed = new char[input.size()];
+    //char* uncompressed = new char[input.size()];
+    std::string decompressed;
+    decompressed.resize(input.size());
+
     while (ok && bytes < 1024 * 1048576) {  // Compress 1G
-      ok =  port::Snappy_Uncompress(compressed.data(), compressed.size(),
-                                    uncompressed);
+      compressor.decompress(compressed.data(), compressed.size(), decompressed);
+      ok = decompressed.size() > 0;
       bytes += input.size();
       thread->stats.FinishedSingleOp();
     }
-    delete[] uncompressed;
+    //delete[] uncompressed;
 
     if (!ok) {
       thread->stats.AddMessage("(snappy failure)");
@@ -705,6 +736,7 @@ class Benchmark {
       thread->stats.AddBytes(bytes);
     }
   }
+#endif
 
   void Open() {
     assert(db_ == NULL);

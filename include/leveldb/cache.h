@@ -20,16 +20,17 @@
 
 #include <stdint.h>
 #include "leveldb/slice.h"
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class Cache;
+class LEVELDB_EXPORT Cache;
 
 // Create a new cache with a fixed size capacity.  This implementation
 // of Cache uses a least-recently-used eviction policy.
-extern Cache* NewLRUCache(size_t capacity);
+extern LEVELDB_EXPORT Cache* NewLRUCache(size_t capacity);
 
-class Cache {
+class LEVELDB_EXPORT Cache {
  public:
   Cache() { }
 
@@ -38,7 +39,7 @@ class Cache {
   virtual ~Cache();
 
   // Opaque handle to an entry stored in the cache.
-  struct Handle { };
+  struct LEVELDB_EXPORT Handle { };
 
   // Insert a mapping from key->value into the cache and assign it
   // the specified charge against the total cache capacity.
@@ -97,7 +98,7 @@ class Cache {
   void LRU_Append(Handle* e);
   void Unref(Handle* e);
 
-  struct Rep;
+  struct LEVELDB_EXPORT Rep;
   Rep* rep_;
 
   // No copying allowed

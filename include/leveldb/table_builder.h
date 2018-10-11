@@ -16,14 +16,15 @@
 #include <stdint.h>
 #include "leveldb/options.h"
 #include "leveldb/status.h"
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class BlockBuilder;
-class BlockHandle;
-class WritableFile;
+class LEVELDB_EXPORT BlockBuilder;
+class LEVELDB_EXPORT BlockHandle;
+class LEVELDB_EXPORT WritableFile;
 
-class TableBuilder {
+class LEVELDB_EXPORT TableBuilder {
  public:
   // Create a builder that will store the contents of the table it is
   // building in *file.  Does not close the file.  It is up to the
@@ -77,9 +78,9 @@ class TableBuilder {
  private:
   bool ok() const { return status().ok(); }
   void WriteBlock(BlockBuilder* block, BlockHandle* handle);
-  void WriteRawBlock(const Slice& data, CompressionType, BlockHandle* handle);
+  void WriteRawBlock(const Slice& data, Compressor* compressor, BlockHandle* handle);
 
-  struct Rep;
+  struct LEVELDB_EXPORT Rep;
   Rep* rep_;
 
   // No copying allowed

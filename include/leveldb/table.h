@@ -7,21 +7,22 @@
 
 #include <stdint.h>
 #include "leveldb/iterator.h"
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class Block;
-class BlockHandle;
-class Footer;
-struct Options;
-class RandomAccessFile;
-struct ReadOptions;
-class TableCache;
+class LEVELDB_EXPORT Block;
+class LEVELDB_EXPORT BlockHandle;
+class LEVELDB_EXPORT Footer;
+struct LEVELDB_EXPORT Options;
+class LEVELDB_EXPORT RandomAccessFile;
+struct LEVELDB_EXPORT ReadOptions;
+class LEVELDB_EXPORT TableCache;
 
 // A Table is a sorted map from strings to strings.  Tables are
 // immutable and persistent.  A Table may be safely accessed from
 // multiple threads without external synchronization.
-class Table {
+class LEVELDB_EXPORT Table {
  public:
   // Attempt to open the table that is stored in bytes [0..file_size)
   // of "file", and read the metadata entries necessary to allow
@@ -56,7 +57,7 @@ class Table {
   uint64_t ApproximateOffsetOf(const Slice& key) const;
 
  private:
-  struct Rep;
+  struct LEVELDB_EXPORT Rep;
   Rep* rep_;
 
   explicit Table(Rep* rep) { rep_ = rep; }
@@ -65,7 +66,7 @@ class Table {
   // Calls (*handle_result)(arg, ...) with the entry found after a call
   // to Seek(key).  May not make such a call if filter policy says
   // that key is not present.
-  friend class TableCache;
+  friend class LEVELDB_EXPORT TableCache;
   Status InternalGet(
       const ReadOptions&, const Slice& key,
       void* arg,

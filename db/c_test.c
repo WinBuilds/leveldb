@@ -9,7 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 const char* phase = "";
 static char dbname[200];
@@ -116,7 +119,7 @@ static void CmpDestroy(void* arg) { }
 
 static int CmpCompare(void* arg, const char* a, size_t alen,
                       const char* b, size_t blen) {
-  int n = (alen < blen) ? alen : blen;
+  size_t n = (alen < blen) ? alen : blen;
   int r = memcmp(a, b, n);
   if (r == 0) {
     if (alen < blen) r = -1;
@@ -154,6 +157,10 @@ unsigned char FilterKeyMatch(
   return fake_filter_result;
 }
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 int main(int argc, char** argv) {
   leveldb_t* db;
   leveldb_comparator_t* cmp;
@@ -167,11 +174,16 @@ int main(int argc, char** argv) {
 
   CheckCondition(leveldb_major_version() >= 1);
   CheckCondition(leveldb_minor_version() >= 1);
-
-  snprintf(dbname, sizeof(dbname),
-           "%s/leveldb_c_test-%d",
-           GetTempDir(),
-           ((int) geteuid()));
+  #ifdef _WIN32
+  {
+     char username[256] = "";
+     DWORD username_len = 255;
+     GetUserNameA(username, &username_len);
+     snprintf(dbname, sizeof(dbname), "%s/leveldb_c_test-%s", GetTempDir(), username);
+  }
+  #else
+  snprintf(dbname, sizeof(dbname), "%s/leveldb_c_test-%d", GetTempDir(),  ((int) geteuid()));
+  #endif
 
   StartPhase("create_objects");
   cmp = leveldb_comparator_create(NULL, CmpDestroy, CmpCompare, CmpName);

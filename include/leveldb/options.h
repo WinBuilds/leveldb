@@ -6,29 +6,23 @@
 #define STORAGE_LEVELDB_INCLUDE_OPTIONS_H_
 
 #include <stddef.h>
+#include <memory>
+#include <unordered_map>
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class Cache;
-class Comparator;
-class Env;
-class FilterPolicy;
-class Logger;
-class Snapshot;
-
-// DB contents are stored in a set of blocks, each of which holds a
-// sequence of key,value pairs.  Each block may be compressed before
-// being stored in a file.  The following enum describes which
-// compression method (if any) is used to compress a block.
-enum CompressionType {
-  // NOTE: do not change the values of existing entries, as these are
-  // part of the persistent format on disk.
-  kNoCompression     = 0x0,
-  kSnappyCompression = 0x1
-};
+class LEVELDB_EXPORT Cache;
+class LEVELDB_EXPORT Comparator;
+class LEVELDB_EXPORT Env;
+class LEVELDB_EXPORT FilterPolicy;
+class LEVELDB_EXPORT Logger;
+class LEVELDB_EXPORT Snapshot;
+class LEVELDB_EXPORT Compressor;
+class LEVELDB_EXPORT DecompressAllocator;
 
 // Options to control the behavior of a database (passed to DB::Open)
-struct Options {
+struct LEVELDB_EXPORT Options {
   // -------------------
   // Parameters that affect behavior
 
@@ -138,7 +132,7 @@ struct Options {
   // worth switching to kNoCompression.  Even if the input data is
   // incompressible, the kSnappyCompression implementation will
   // efficiently detect that and will switch to uncompressed mode.
-  CompressionType compression;
+  Compressor* compressors[256];
 
   // EXPERIMENTAL: If true, append to existing MANIFEST and log files
   // when a database is opened.  This can significantly speed up open.
@@ -158,7 +152,7 @@ struct Options {
 };
 
 // Options that control read operations
-struct ReadOptions {
+struct LEVELDB_EXPORT ReadOptions {
   // If true, all data read from underlying storage will be
   // verified against corresponding checksums.
   // Default: false
@@ -176,15 +170,20 @@ struct ReadOptions {
   // Default: NULL
   const Snapshot* snapshot;
 
+  // Allocator to grab the (possibly tens of mb big) blocks of memory 
+  // where to decompress
+  DecompressAllocator* decompress_allocator;
+
   ReadOptions()
       : verify_checksums(false),
         fill_cache(true),
-        snapshot(NULL) {
+        snapshot(NULL),
+		decompress_allocator(NULL) {
   }
 };
 
 // Options that control write operations
-struct WriteOptions {
+struct LEVELDB_EXPORT WriteOptions {
   // If true, the write will be flushed from the operating system
   // buffer cache (by calling WritableFile::Sync()) before the write
   // is considered complete.  If this flag is true, writes will be

@@ -6,16 +6,17 @@
 #define STORAGE_LEVELDB_INCLUDE_COMPARATOR_H_
 
 #include <string>
+#include "leveldb/export.h"
 
 namespace leveldb {
 
-class Slice;
+class LEVELDB_EXPORT Slice;
 
 // A Comparator object provides a total order across slices that are
 // used as keys in an sstable or a database.  A Comparator implementation
 // must be thread-safe since leveldb may invoke its methods concurrently
 // from multiple threads.
-class Comparator {
+class LEVELDB_EXPORT Comparator {
  public:
   virtual ~Comparator();
 
